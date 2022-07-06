@@ -9,12 +9,39 @@ library(shinyWidgets) ## Special Shiny Widgets
 library(data.table)
 Sys.setenv(REDCAP_BYPASS_SANITIZE_TOKEN=1)
 server <- function(input, output, session) {
+####RDCRN REDCap API Gateway authentication
+  # /home/secrets/token
+  # url <- "https://devrc.rarediseasesnetwork.org/api/"
+  url <- "https://appapi.int.rdcrn.org/redcap/pid/64"
+  updateTextInput(session, "api", value=url)
   
+  token_file <- "/home/secrets/token"
+  updateTextInput(session, "token_file", value=token_file)
+  
+  input_token <- readLines(token_file)
+  updateTextInput(session, "token", value=input_token)
+  
+  # if (!grepl("[A-Za-z0-9]",substring(token, 1, 1))) {
+  # token <- readLines(token)
+  # }
+  
+  reactive({
+    cat("token_file update")
+    token_file <- input$token_file
+    if (file != "") {
+      input_token <- readLines(token_file)
+      updateTextInput(session, "token", value=input_token)
+      token_reread_sec <- 60
+      invalidateLater(token_reread_sec*1000, session)
+    }
+  })  
   ########===Data Dict===#########
   project_title<-reactive({
     ##validate
-    validate(need(input$token!='' , 'Please fill Token!'))
-    formData <- list("token"=input$token,
+    # validate(need(input$token!='' , 'Please fill Token!'))
+    validate(need(input_token='' , 'Please fill Token!'))
+    formData <- list(#"token"=input$token,
+                     "token"=input_token,
                      content='project',
                      format='csv',
                      returnFormat='json'
@@ -24,8 +51,10 @@ server <- function(input, output, session) {
   })
   Fields_num<-reactive({
     ##validate
-    validate(need(length(input$token)!='' , 'Please fill Token!'))
-    formData <- list("token"=input$token,
+    # validate(need(length(input$token)!='' , 'Please fill Token!'))
+    validate(need(input_token='' , 'Please fill Token!'))
+    formData <- list(#"token"=input$token,
+                     "token"=input_token,
                      content='exportFieldNames',
                      format='csv',
                      returnFormat='json'
@@ -35,8 +64,10 @@ server <- function(input, output, session) {
   })
   Instruments_num<-reactive({
     ##validate
-    validate(need(length(input$token)!='' , 'Please fill Token!'))
-    formData <- list("token"=input$token,
+    #validate(need(length(input$token)!='' , 'Please fill Token!'))
+    validate(need(input_token='' , 'Please fill Token!'))
+    formData <- list(#"token"=input$token,
+                     "token"=input_token,
                      content='instrument',
                      format='csv',
                      returnFormat='json'
@@ -46,8 +77,10 @@ server <- function(input, output, session) {
   })
   ID<-reactive({
     ##validate
-    validate(need(length(input$token)!='' , 'Please fill Token!'))
-    formData <- list("token"=input$token,
+    # validate(need(length(input$token)!='' , 'Please fill Token!'))
+    validate(need(input_token='' , 'Please fill Token!'))
+    formData <- list(#"token"=input$token,
+                     "token"=input_token,
                      content='record',
                      action='export',
                      format='csv',
@@ -67,7 +100,8 @@ server <- function(input, output, session) {
   })
   Myproject<-reactive({
     ##validate
-    validate(need(length(input$token)!='' , 'Please fill Token!'))
+    # validate(need(length(input$token)!='' , 'Please fill Token!'))
+    validate(need(input_token='' , 'Please fill Token!'))
     `My Project`<-data.frame(
       `Project Title`=project_title()$project_title,
       Records=nrow(ID()),
@@ -91,7 +125,8 @@ server <- function(input, output, session) {
     isolate({
       
       ##validate
-      validate(need(length(input$token)!='' , 'Please fill Token!'))
+      # validate(need(length(input$token)!='' , 'Please fill Token!'))
+      validate(need(input_token='' , 'Please fill Token!'))
       datatable(Myproject(),
                 rownames= FALSE,
                 #caption ='My Projects' ,
@@ -101,7 +136,8 @@ server <- function(input, output, session) {
   })
   
   Event<-reactive({
-    formData <- list("token"=input$token,
+    formData <- list(#"token"=input$token,
+                     "token"=input_token,
                      content='event',
                      format='csv',
                      returnFormat='json'
@@ -123,7 +159,8 @@ server <- function(input, output, session) {
     
     # REDCapR::redcap_metadata_read(redcap_uri = input$api,
     #                               token      = input$token)$data
-    formData <- list("token"=input$token,
+    formData <- list(#"token"=input$token,
+                     "token"=input_token,
                      content='metadata',
                      format='csv',
                      returnFormat='json'
@@ -166,8 +203,6 @@ server <- function(input, output, session) {
     shinyWidgets::pickerInput(
       inputId = "event_all",
       label = "Events:",
-      # choices=c(unique(Event()$redcap_event_name)),
-      # selected =c(unique(Event()$redcap_event_name)) ,
       choices=c(unique(Event()$unique_event_name)),
       selected =c(unique(Event()$unique_event_name)) ,
       multiple = TRUE,
@@ -213,8 +248,8 @@ server <- function(input, output, session) {
     
     isolate({
       data <- REDCapR::redcap_read(redcap_uri = input$api,
-                                   token      = input$token,
-                                   
+                                   #token      = input$token,
+                                   token      = input_token,
                                    raw_or_label=input$raw_label,
                                    events = input$event_all,
                                    raw_or_label_headers=input$raw_label_headers,
@@ -243,7 +278,8 @@ server <- function(input, output, session) {
     
     isolate({
       data <- REDCapR::redcap_read(redcap_uri = input$api,
-                                   token      = input$token,
+                                   # token      = input$token,
+                                   token      = input_token,
                                    raw_or_label=input$raw_label_ins,
                                    raw_or_label_headers=input$raw_label_headers_ins,
                                    forms=input$Instrument,
@@ -342,7 +378,8 @@ server <- function(input, output, session) {
       datatable(
         REDCapR::redcap_report(
           redcap_uri = input$api,
-          token      = input$token,
+          # token      = input$token,
+          token      = input_token,
           raw_or_label=input$raw_label_report,
           raw_or_label_headers=input$raw_label_headers_report,
           report_id  = as.numeric(input$Reports_Name))$data,
@@ -361,7 +398,8 @@ server <- function(input, output, session) {
     isolate({  
       ##validate
       validate(need(input$Reports_Name!='' , 'Please fill Report ID!'))
-      formData <- list("token"=input$token,
+      formData <- list(#"token"=input$token,
+                       "token"= input_token,
                        content='report',
                        format='csv',
                        report_id=as.numeric(input$Reports_Name),
@@ -406,7 +444,7 @@ server <- function(input, output, session) {
       validate(need(!(is.na(input$form_dict)) , 'Please select instrument forms!')) 
       redcap_metadata_read(
         redcap_uri=input$api,
-        token=input$token
+        token=input_token
         
       )$data
     })
