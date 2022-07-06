@@ -9,6 +9,7 @@ library(shinyjs) ## Use JS code in shiny
 library(shinyWidgets) ## Special Shiny Widgets
 library(data.table)
 # library(shinyDataFilter)##Dynamic data filter
+Sys.setenv(REDCAP_BYPASS_SANITIZE_TOKEN=1)
 server <- function(input, output, session) {
   
   ########===Data Dict===#########
