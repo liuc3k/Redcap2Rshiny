@@ -21,9 +21,9 @@ server <- function(input, output, session) {
   input_token <- readLines(token_file)
   updateTextInput(session, "token", value=input_token)
   
-  # if (!grepl("[A-Za-z0-9]",substring(token, 1, 1))) {
-  # token <- readLines(token)
-  # }
+   if (!grepl("[A-Za-z0-9]",substring(input_token, 1, 1))) {
+   token <- readLines(input_token)
+   }
   
   reactive({
     cat("token_file update")
