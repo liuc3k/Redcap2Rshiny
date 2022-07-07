@@ -1,7 +1,7 @@
 ####====================UI===============####
 library(shiny)
 library(REDCapR)      ##Connect REDCap data system
-#library(redcapAPI)
+library(redcapAPI)
 library(dplyr)        ##Data Processing
 library(DT)           ##Render a table widget
 library(shinyjs)      ## Use JS code in shiny
@@ -26,11 +26,10 @@ ui <- fluidPage(
                       sidebarLayout(
                         sidebarPanel(h3("API & Token"),
                                      width = 2,
-                                     #textInput('api', 'URL:', value = "https://rc.rarediseasesnetwork.org/api/", width = NULL, placeholder = 'Please fill URL'),
-                                     #textInput('token', 'TOKEN:', value = "", width = NULL, placeholder = 'Please fill TOKEN'),
-                                     textInput('api', 'Url:', value = "", width = NULL, placeholder = NULL),
-                                     textInput('token_file', 'Token file:', value = "", width = NULL, placeholder = NULL),
-                                     textInput('token', 'Token:', value = "", width = NULL, placeholder = NULL),
+                                     htmlOutput("projectid"),                                     
+                                     #textInput('api', 'Url:', value = "", width = NULL, placeholder = NULL),
+                                     #textInput('token_file', 'Token file:', value = "", width = NULL, placeholder = NULL),
+                                     #textInput('token', 'Token:', value = "", width = NULL, placeholder = NULL),
                                      htmlOutput("execute_info")
                                      
                         ),
