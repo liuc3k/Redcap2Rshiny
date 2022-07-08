@@ -65,7 +65,7 @@ ui <- fluidPage(
                         tabPanel("Data Listing",
                                  sidebarLayout(
                                    sidebarPanel(h2("My Reports & Exports"),
-                                                width = 2,
+                                                width = 3,
                                                 shinyjs::useShinyjs(),
                                                 # id = "Table_div",
                                                 htmlOutput("Report_name"),
@@ -81,7 +81,9 @@ ui <- fluidPage(
                                                                              tags$i(
                                                                                class = "glyphicon glyphicon-info-sign", 
                                                                                style = "color:#0072B2;",
-                                                                               title = "1. Choose the field and specify the operator and value for the first filter. 2. Select And/Or for the next filter 3. Choose field and specify the operator and value for the next filter. EX: [age] > 30 AND [ethnic]='1'"
+                                                                               title = "1. Choose the field and specify the operator and value for the first filter. 2. Advanced logic (and, or) and filtering (=, not=, <, <=,>,>=,
+contains)
+ 3. Choose field and specify the operator and value for the next filter. EX: [age] > 30 AND [ethnic]='1'"
                                                                              )
                                                                            ), 
                                                                            placeholder ="Ex: [gender] = '1'"),
@@ -107,7 +109,9 @@ ui <- fluidPage(
                                                                              tags$i(
                                                                                class = "glyphicon glyphicon-info-sign", 
                                                                                style = "color:#0072B2;",
-                                                                               title = "1. Choose the field and specify the operator and value for the first filter. 2. Select And/Or for the next filter 3. Choose field and specify the operator and value for the next filter. EX: [age] > 30 AND [ethnic]='1'"
+                                                                               title = "1. Choose the field and specify the operator and value for the first filter. 2. Advanced logic (and, or) and filtering (=, not=, <, <=,>,>=,
+contains)
+ 3. Choose field and specify the operator and value for the next filter. EX: [age] > 30 AND [ethnic]='1'"
                                                                              )
                                                                            ), 
                                                                            placeholder ="Ex: [gender] = '1'"),
@@ -125,7 +129,7 @@ ui <- fluidPage(
                                                 
                                    ),
                                    
-                                   mainPanel(width = 10,
+                                   mainPanel(width = 9,
                                              fluidRow(
                                                column(
                                                  width=12,
