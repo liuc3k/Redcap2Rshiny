@@ -28,10 +28,11 @@ server <- function(input, output, session) {
     result
     table<-unlist(result)
     df <- data.frame(matrix(unlist(result), nrow=length(result), byrow=TRUE))
+    setNames(as.character(df$X1),df$X2)
   })
-  choices<-reactive({ setNames(as.character(PID()$X1),PID()$X2) })
+  #choices_projectid<-reactive({ setNames(as.character(PID()$X1),PID()$X2) })
   output$projectid<-renderUI({
-    selectInput("ProjectID","Project:",selected ='',c(choices()))
+    selectInput("ProjectID","Project:",selected ='',c(PID()))
   })
   URL<-reactive({paste0("https://appapi.int.rdcrn.org/redcap/pid/",input$ProjectID)})
   TOKEN<-reactive({input_token <- readLines(token_file <- "/home/secrets/token")})
@@ -89,9 +90,7 @@ server <- function(input, output, session) {
     result <- httr::content(response)
   })
   Fields_num<-reactive({
-    ##validate
-    #validate(need(length(input$token)!='' , 'Please fill Token!'))
-    #validate(need(input_token='' , 'Please fill Token!'))
+    
     formData <- list("token"=TOKEN(),
                      #"token"=input_token,
                      content='exportFieldNames',
@@ -101,6 +100,20 @@ server <- function(input, output, session) {
     response <- httr::POST(url=URL(), body = formData, encode = "form")
     #response <- httr::POST(url=url, body = formData, encode = "form")
     result <- httr::content(response)
+  })
+  Fields_label<-reactive({
+    
+    formData <- list("token"=TOKEN(),
+                     #"token"=input_token,
+                     content='metadata',
+                     format='csv',
+                     returnFormat='json'
+    )
+    response <- httr::POST(url=URL(), body = formData, encode = "form")
+    
+    result <- httr::content(response)
+    
+    setNames(as.character(result$field_name) ,result$field_label)
   })
   Instruments_num<-reactive({
     ##validate
@@ -177,6 +190,8 @@ server <- function(input, output, session) {
     })  
   })
   
+  
+  
   Event<-reactive({
     formData <- list("token"=TOKEN(),
                      #"token"=input_token,
@@ -188,7 +203,17 @@ server <- function(input, output, session) {
     #response <- httr::POST(url=url, body = formData, encode = "form")
     result <- httr::content(response)
   })
-  
+  Event_label<-reactive({
+    formData <- list("token"=TOKEN(),
+                     #"token"=input_token,
+                     content='event',
+                     format='csv',
+                     returnFormat='json'
+    )
+    response <- httr::POST(url=URL(), body = formData, encode = "form")
+    result <- httr::content(response)
+    choices = setNames(as.character(result$unique_event_name),result$event_name)
+  })
   
   
   ### Data
@@ -210,9 +235,19 @@ server <- function(input, output, session) {
     result <- httr::content(response)
     
   })
-  
+  Instrument_label<-reactive({
+    formData <- list("token"=TOKEN(),
+                     
+                     content='instrument',
+                     format='csv',
+                     returnFormat='json'
+    )
+    response <- httr::POST(url=URL(), body = formData, encode = "form")
+    result <- httr::content(response)
+    setNames(as.character(result$instrument_name ),result$instrument_label)
+  }) 
   output$Instrument<-renderUI({
-    selectInput("Instrument","Instrument:",selected ='',c(unique(spec()$form_name)))
+    selectInput("Instrument","Instrument:",selected ='',c(Instrument_label()))
     
   })
   select_fields<-reactive({
@@ -220,23 +255,34 @@ server <- function(input, output, session) {
                        filter(form_name==input$Instrument)%>%
                        select(field_name))
   })
-  
+  ###Ref:https://stackoverflow.com/questions/50924933/r-shiny-selectinput-how-to-search-group-name-label
+  test_field<-reactive({
+    data<-tibble(field_name=c(spec()$field_name),
+                 form_name=c(spec()$form_name))
+    data$field_name <- as.factor(as.character(data$field_name))
+    data$form_name <- as.factor(as.character(data$form_name))
+    cicd <- split(as.list(levels(data$field_name)), data$form_name)
+  })
   output$Columns_all<-renderUI({
     
     shinyWidgets::pickerInput(
       inputId = "Columns_All",
       label = "Fields:",
-      # choices=c(unique(spec()$field_name)),
-      choices = c(unique(Fields_num()$original_field_name)),
-      # selected = c(unique(spec()$field_name)),
+      #choices=c(unique(Fields_num()$original_field_name)),
+      choices=c(test_field()),
       multiple = TRUE,
-      options = list(`actions-box` = TRUE,#When set to true, adds two buttons to the top of the dropdown menu (Select All & Deselect All).
+      options = list(`actions-box` = TRUE,#When set to true, adds two buttons to the top of the dropdown menu (Select All &   Deselect All).
                      noneSelectedText='Nothing selected',#The text that is displayed when a multiple select has no selected options.
                      `live-search` = TRUE#adds a search box
                      
       )
     )
+    #selectizeInput(inputId = "Columns_All",
+    #label = "Fields:",
+    #choices=c(Fields_label()),
+    #multiple = TRUE
     
+    #)
     
   })
   output$Event_all<-renderUI({
@@ -244,8 +290,10 @@ server <- function(input, output, session) {
     shinyWidgets::pickerInput(
       inputId = "event_all",
       label = "Events:",
-      choices=c(unique(Event()$unique_event_name)),
-      selected =c(unique(Event()$unique_event_name)) ,
+      #choices=c(unique(Event()$unique_event_name)),
+      choices= c(Event_label()),
+      #selected =c(unique(Event()$unique_event_name)) ,
+      selected =c(Event_label()),  
       multiple = TRUE,
       options = list(`actions-box` = TRUE,#When set to true, adds two buttons to the top of the dropdown menu (Select All & Deselect All).
                      noneSelectedText='Nothing selected',#The text that is displayed when a multiple select has no selected options.
@@ -261,10 +309,10 @@ server <- function(input, output, session) {
     shinyWidgets::pickerInput(
       inputId = "event_ins",
       label = "Events:",
-      # choices=c(unique(Event()$redcap_event_name)),
-      # selected =c(unique(Event()$redcap_event_name)) ,
-      choices=c(unique(Event()$unique_event_name)),
-      selected =c(unique(Event()$unique_event_name)) ,
+      #choices=c(unique(Event()$unique_event_name)),
+      choices= c(Event_label()),
+      #selected =c(unique(Event()$unique_event_name)) ,
+      selected =c(Event_label()),
       multiple = TRUE,
       options = list(`actions-box` = TRUE,#When set to true, adds two buttons to the top of the dropdown menu (Select All & Deselect All).
                      noneSelectedText='Nothing selected',#The text that is displayed when a multiple select has no selected options.
@@ -307,8 +355,9 @@ server <- function(input, output, session) {
                                    raw_or_label_headers=input$raw_label_headers,
                                    export_data_access_groups=input$export_data_access_groups,
                                    filter_logic=input$filter_all,
-                                   #fields =c(field()[1],input$Columns_All)
-                                   fields =c(Fields_num()$original_field_name[1],input$Columns_All))$data
+                                   fields =c(Fields_num()$original_field_name[1],input$Columns_All)
+                                   #fields =c(Fields_num()$original_field_name[1],input$Columns_All)
+      )$data
       
       
     })
@@ -518,8 +567,8 @@ server <- function(input, output, session) {
     shinyWidgets::pickerInput(
       "form_dict",
       "Instrument:",
-      selected =c(unique(spec()$form_name)) ,
-      choices=c(unique(spec()$form_name)),
+      selected =c(Instrument_label()) ,
+      choices=c(Instrument_label()),
       
       multiple = TRUE,
       options = list(`actions-box` = TRUE,#When set to true, adds two buttons to the top of the dropdown menu (Select All & Deselect All).
