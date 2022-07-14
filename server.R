@@ -261,7 +261,7 @@ server <- function(input, output, session) {
     )
     response <- httr::POST(url=URL(), body = formData, encode = "form")
     result <- httr::content(response)
-    #setNames(as.character(result$instrument_name ),result$instrument_label)
+    
   }) 
   output$Instrument_all<-renderUI({
     
@@ -284,14 +284,15 @@ server <- function(input, output, session) {
                        filter(form_name==input$Instrument)%>%
                        select(field_name))
   })
-  ###Need to fix!
-  ###Ref:https://stackoverflow.com/questions/50924933/r-shiny-selectinput-how-to-search-group-name-label
-  test_field<-reactive({
+  ###Ref:https://stackoverflow.com/questions/54409698/get-the-group-label-from-a-grouped-list-of-choices-in-selectinput-rshiny
+  field_instrument<-reactive({
     data<-tibble(field_name=c(spec()$field_name),
-                 form_name=c(spec()$form_name))
-    data$field_name <- as.factor(as.character(data$field_name))
-    data$form_name <- as.factor(as.character(data$form_name))
-    cicd <- split(as.list(levels(data$field_name)), data$form_name)
+                 instrument_name=c(spec()$form_name))
+    
+    data1<-data%>%
+      left_join(Instrument(),by='instrument_name')
+    
+    
   })
   
   
@@ -300,8 +301,7 @@ server <- function(input, output, session) {
     shinyWidgets::pickerInput(
       inputId = "Columns_All",
       label = "Fields:",
-      #choices=c(unique(Fields_num()$original_field_name)),
-      choices=c(test_field()),
+      choices=split(field_instrument()$field_name,field_instrument()$instrument_label),
       multiple = TRUE,
       options = list(`actions-box` = TRUE,#When set to true, adds two buttons to the top of the dropdown menu (Select All &   Deselect All).
                      noneSelectedText='Nothing selected',#The text that is displayed when a multiple select has no selected options.
@@ -318,9 +318,7 @@ server <- function(input, output, session) {
     shinyWidgets::pickerInput(
       inputId = "event_all",
       label = "Events:",
-      #choices=c(unique(Event()$unique_event_name)),
-      choices= c(Event_label()),
-      #selected =c(unique(Event()$unique_event_name)) ,
+      choices= c(Event_label()),      
       selected =c(Event_label()),  
       multiple = TRUE,
       options = list(`actions-box` = TRUE,#When set to true, adds two buttons to the top of the dropdown menu (Select All & Deselect All).
