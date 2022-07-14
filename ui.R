@@ -11,10 +11,6 @@ library(shinycssloaders)##Add loading animations
 ##Shiny Program
 ##################=======UI####
 ui <- fluidPage(  
-  #tags$style(type="text/css",
-  #          ".shiny-output-error { visibility: hidden; }",
-  #         ".shiny-output-error:before { visibility: hidden; }"
-  #),
   
   # shinyjs::useShinyjs(),## Called from a Shiny app's UI in order for all other shinyjs functions to work.
   navbarPage("REDCap2RShiny",
@@ -67,62 +63,39 @@ ui <- fluidPage(
                                    sidebarPanel(h2("My Reports & Exports"),
                                                 width = 3,
                                                 shinyjs::useShinyjs(),
-                                                # id = "Table_div",
-                                                htmlOutput("Report_name"),
-                                                conditionalPanel(condition="input.Report_name == 'all'",
-                                                                 id = "Table_all_div",
-                                                                 selectInput("raw_label",'Raw or Label(Rows)?',selected = 'raw',choices=c("Raw"='raw','Label'='label')),
-                                                                 selectInput("raw_label_headers",'Raw or Label(Headers)?',selected = 'raw',choices=c("Raw"='raw','Label'='label')),
-                                                                 htmlOutput('Event_all'),
-                                                                 textInput("filter_all",
-                                                                           
-                                                                           label= tags$span(
-                                                                             "Filter Logic", 
-                                                                             tags$i(
-                                                                               class = "glyphicon glyphicon-info-sign", 
-                                                                               style = "color:#0072B2;",
-                                                                               title = "1. Choose the field and specify the operator and value for the first filter. 2. Advanced logic (and, or) and filtering (=, not=, <, <=,>,>=,
-contains)
- 3. Choose field and specify the operator and value for the next filter. EX: [age] > 30 AND [ethnic]='1'"
-                                                                             )
-                                                                           ), 
-                                                                           placeholder ="Ex: [gender] = '1'"),
-                                                                 
-                                                                 
-                                                                 checkboxInput("export_data_access_groups",'Data Access Groups'),
-                                                                 htmlOutput("Columns_all"),
-                                                                 htmlOutput("execute_all"),
-                                                                 htmlOutput("reset_all"),
-                                                                 br(),
-                                                                 htmlOutput("Data_Listing_dl_BUTTON_all")
-                                                ),
                                                 
-                                                conditionalPanel(condition="input.Report_name == 'selected'",
-                                                                 id = "Table_selected_div",
-                                                                 selectInput("raw_label_ins",'Raw or Label(Rows)?',selected = 'raw',choices=c("Raw"='raw','Label'='label')),
-                                                                 selectInput("raw_label_headers_ins",'Raw or Label(Headers)?',selected = 'raw',choices=c("Raw"='raw','Label'='label')),
-                                                                 htmlOutput('Event_ins'),
-                                                                 textInput("filter_ins",
-                                                                           
-                                                                           label= tags$span(
-                                                                             "Filter Logic", 
-                                                                             tags$i(
-                                                                               class = "glyphicon glyphicon-info-sign", 
-                                                                               style = "color:#0072B2;",
-                                                                               title = "1. Choose the field and specify the operator and value for the first filter. 2. Advanced logic (and, or) and filtering (=, not=, <, <=,>,>=,
+                                                
+                                                
+                                                
+                                                id = "Table_all_div",
+                                                selectInput("raw_label",'Raw or Label(Rows)?',selected = 'raw',choices=c("Raw"='raw','Label'='label')),
+                                                selectInput("raw_label_headers",'Raw or Label(Headers)?',selected = 'raw',choices=c("Raw"='raw','Label'='label')),
+                                                htmlOutput('Event_all'),
+                                                textInput("filter_all",
+                                                          
+                                                          label= tags$span(
+                                                            "Filter Logic", 
+                                                            tags$i(
+                                                              class = "glyphicon glyphicon-info-sign", 
+                                                              style = "color:#0072B2;",
+                                                              title = "1. Choose the field and specify the operator and value for the first filter. 2. Advanced logic (and, or) and filtering (=, not=, <, <=,>,>=,
 contains)
  3. Choose field and specify the operator and value for the next filter. EX: [age] > 30 AND [ethnic]='1'"
-                                                                             )
-                                                                           ), 
-                                                                           placeholder ="Ex: [gender] = '1'"),
-                                                                 
-                                                                 checkboxInput("export_data_access_groups_ins",'Data Access Groups'),
-                                                                 htmlOutput('Instrument'),
-                                                                 htmlOutput("execute_selected"),
-                                                                 htmlOutput("reset_selected"),
-                                                                 br(),
-                                                                 htmlOutput("Data_Listing_dl_BUTTON_selected")
-                                                )
+                                                            )
+                                                          ), 
+                                                          placeholder ="Ex: [gender] = '1'"),
+                                                
+                                                
+                                                checkboxInput("export_data_access_groups",'Data Access Groups'),
+                                                htmlOutput("Columns_all"),
+                                                htmlOutput('Instrument_all'),
+                                                htmlOutput("execute_all"),
+                                                htmlOutput("reset_all"),
+                                                br(),
+                                                htmlOutput("Data_Listing_dl_BUTTON_all")
+                                                
+                                                
+                                                
                                                 
                                                 
                                                 
@@ -135,9 +108,9 @@ contains)
                                                  width=12,
                                                  tags$head(tags$style(".dataTables_scrollHeadInner {float:left;} ")),
                                                  tags$head(tags$style(".display.dataTable.no-footer {float:left;}")),
-                                                 # DTOutput('DM_TBL')#%>% shinycssloaders::withSpinner()
-                                                 conditionalPanel(condition="input.Report_name == 'all'",DTOutput('DM_TBL_all')%>% shinycssloaders::withSpinner()),
-                                                 conditionalPanel(condition="input.Report_name == 'selected'",DTOutput('DM_TBL_selected')%>% shinycssloaders::withSpinner())
+                                                 
+                                                 
+                                                 DTOutput('DM_TBL_all')%>% shinycssloaders::withSpinner()
                                                )
                                              ))
                                  )
