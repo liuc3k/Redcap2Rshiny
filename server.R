@@ -1,5 +1,6 @@
 ####========================server==========##
 ##Required Packages:
+library(rlang)
 library(shiny)
 library(REDCapR)##Connect REDCap data system
 library(dplyr)  ##Data Processing
@@ -11,9 +12,12 @@ library(redcapAPI)
 ##External source
 source('www/redcap_read_pyl.R')
 source('www/redcap_report_pyl.R')
+source('www/functions.R')
 Sys.setenv(REDCAP_BYPASS_SANITIZE_TOKEN=1)
 server <- function(input, output, session) {
   ###RDCRN REDCap API Gateway authentication
+  Sys.setenv(TZ = "America/New_York")
+  
   
   ##Projectid
   PID<-reactive({
@@ -59,18 +63,19 @@ server <- function(input, output, session) {
   #token <- readLines(input_token)
   #}
   
-  reactive({
-    cat("token_file update")
-    #token_file <- input$token_file
-    token_file <- "/home/secrets/token"
-    if (file != "") {
-      input_token <- readLines(token_file)
-      updateTextInput(session, "token", value=input_token)
-      token_reread_sec <- 60
-      invalidateLater(token_reread_sec*1000, session)
-    }
-  })  
-  Api_key<-reactive({redcapConnection(url= URL(), token=TOKEN())})
+  #reactive({
+  #cat("token_file update")
+  ###token_file <- input$token_file
+  #token_file <- "/home/secrets/token"
+  #if (file != "") {
+  #input_token <- readLines(token_file)
+  #updateTextInput(session, "token", value=input_token)
+  #token_reread_sec <- 60
+  #invalidateLater(token_reread_sec*1000, session)
+  
+  # }
+  #})  
+  #Api_key<-reactive({redcapConnection(url= URL(), token=TOKEN())})
   
   
   
@@ -218,10 +223,11 @@ server <- function(input, output, session) {
   
   ### Data
   
-  output$Report_name<-renderUI({
-    selectInput("Report_name","Report name:",c("All Data"="all",
-                                               "Selected Instruments"="selected"))
-  })
+  #output$Report_name<-renderUI({
+  #selectInput("Report_name","Report name:",c("Whole Dataset"="whole",
+  #                                           "Customized Dataset"="all",
+  #                                           "Selected Instruments"="selected"))
+  #})
   
   spec<-reactive({
     
@@ -246,15 +252,39 @@ server <- function(input, output, session) {
     result <- httr::content(response)
     setNames(as.character(result$instrument_name ),result$instrument_label)
   }) 
-  output$Instrument<-renderUI({
-    selectInput("Instrument","Instrument:",selected ='',c(Instrument_label()))
+  Instrument<-reactive({
+    formData <- list("token"=TOKEN(),
+                     
+                     content='instrument',
+                     format='csv',
+                     returnFormat='json'
+    )
+    response <- httr::POST(url=URL(), body = formData, encode = "form")
+    result <- httr::content(response)
+    #setNames(as.character(result$instrument_name ),result$instrument_label)
+  }) 
+  output$Instrument_all<-renderUI({
     
+    shinyWidgets::pickerInput(
+      inputId = "Instrument_All",
+      label = "Instruments:",
+      selected ='',
+      choices=c(Instrument_label()),
+      multiple = TRUE,
+      options = list(`actions-box` = TRUE,#When set to true, adds two buttons to the top of the dropdown menu (Select All &   Deselect All).
+                     noneSelectedText='Nothing selected',#The text that is displayed when a multiple select has no selected options.
+                     `live-search` = TRUE#adds a search box
+                     
+                     
+      )
+    )
   })
   select_fields<-reactive({
     select_fields<-c(spec()%>%
                        filter(form_name==input$Instrument)%>%
                        select(field_name))
   })
+  ###Need to fix!
   ###Ref:https://stackoverflow.com/questions/50924933/r-shiny-selectinput-how-to-search-group-name-label
   test_field<-reactive({
     data<-tibble(field_name=c(spec()$field_name),
@@ -263,6 +293,8 @@ server <- function(input, output, session) {
     data$form_name <- as.factor(as.character(data$form_name))
     cicd <- split(as.list(levels(data$field_name)), data$form_name)
   })
+  
+  
   output$Columns_all<-renderUI({
     
     shinyWidgets::pickerInput(
@@ -275,14 +307,10 @@ server <- function(input, output, session) {
                      noneSelectedText='Nothing selected',#The text that is displayed when a multiple select has no selected options.
                      `live-search` = TRUE#adds a search box
                      
+                     
       )
     )
-    #selectizeInput(inputId = "Columns_All",
-    #label = "Fields:",
-    #choices=c(Fields_label()),
-    #multiple = TRUE
     
-    #)
     
   })
   output$Event_all<-renderUI({
@@ -323,7 +351,10 @@ server <- function(input, output, session) {
     
     
   })
-  ##Execute button for entire dataset
+  
+  
+  
+  ##Execute button for Customized dataset
   v <- reactiveValues(doTable_all = FALSE)
   
   observeEvent(input$execute_button_all, {
@@ -336,27 +367,18 @@ server <- function(input, output, session) {
     if (v$doTable_all == FALSE) return()
     
     isolate({
-      #data <- REDCapR::redcap_read(redcap_uri = input$api,
-      #token      = input$token,
-      #token      = input_token,
-      #raw_or_label=input$raw_label,
-      #events = input$event_all,
-      #raw_or_label_headers=input$raw_label_headers,
-      #export_data_access_groups=input$export_data_access_groups,
-      #filter_logic=input$filter_all,
-      # fields =c(field()[1],input$Columns_All)
-      #fields =c(Fields_num()$original_field_name[1],input$Columns_All)
-      #)$data
-      data <- redcap_read_pyl(     redcap_uri = URL(),
-                                   token      = TOKEN(),
-                                   
-                                   raw_or_label=input$raw_label,
-                                   events = input$event_all,
-                                   raw_or_label_headers=input$raw_label_headers,
-                                   export_data_access_groups=input$export_data_access_groups,
-                                   filter_logic=input$filter_all,
-                                   fields =c(Fields_num()$original_field_name[1],input$Columns_All)
-                                   #fields =c(Fields_num()$original_field_name[1],input$Columns_All)
+      
+      data <- redcap_read_large(     redcap_uri = URL(),
+                                     token      = TOKEN(),
+                                     batch_size=50L,
+                                     raw_or_label=input$raw_label,
+                                     events = c(input$event_all),
+                                     forms=c(input$Instrument_All),
+                                     raw_or_label_headers=input$raw_label_headers,
+                                     export_data_access_groups=input$export_data_access_groups,
+                                     filter_logic=input$filter_all,
+                                     fields =c(Fields_num()$original_field_name[1],input$Columns_All)
+                                     
       )$data
       
       
@@ -368,47 +390,8 @@ server <- function(input, output, session) {
   })
   
   
-  ##Execute button for selected instrument
-  q <- reactiveValues(doTable_selected = FALSE)
   
-  observeEvent(input$execute_button_selected, {
-    
-    q$doTable_selected <- input$execute_button_selected
-  })
-  DataListing_selected<-reactive({
-    if (q$doTable_selected == FALSE) return()
-    
-    isolate({
-      #data <- REDCapR::redcap_read(redcap_uri = input$api,
-      #token      = input$token,
-      #token      = input_token,
-      #raw_or_label=input$raw_label_ins,
-      #raw_or_label_headers=input$raw_label_headers_ins,
-      #forms=input$Instrument,
-      #events = input$event_ins,
-      #filter_logic=input$filter_ins,
-      #export_data_access_groups=input$export_data_access_groups_ins,
-      # fields =c(field()[1])
-      #fields =c(Fields_num()$original_field_name[1])
-      #)$data
-      
-      data <- redcap_read_pyl(     redcap_uri = URL(),
-                                   token      = TOKEN(),
-                                   raw_or_label=input$raw_label_ins,
-                                   raw_or_label_headers=input$raw_label_headers_ins,
-                                   forms=input$Instrument,
-                                   events = input$event_ins,
-                                   filter_logic=input$filter_ins,
-                                   export_data_access_groups=input$export_data_access_groups_ins,
-                                   fields =c(Fields_num()$original_field_name[1]))$data
-      
-    })
-  })
-  output$DM_TBL_selected <- renderDT({
-    
-    datatable(DataListing_selected(),rownames= FALSE,options = list(autoWidth = TRUE,scrollX=TRUE))
-  })
-  ## Reset button for entire data 
+  ## Reset button for Customized data 
   output$reset_all<-renderUI({actionButton("reset_all", "Reset",
                                            #icon = icon("refresh"),
                                            icon=icon('glyphicon glyphicon-refresh'),
@@ -419,18 +402,8 @@ server <- function(input, output, session) {
   observeEvent(
     input$reset_all,{shinyjs::reset("Table_all_div")}
   )
-  ## Reset button for selected data 
-  output$reset_selected<-renderUI({actionButton("reset_selected", "Reset",
-                                                # icon = icon("refresh"),
-                                                icon=icon('glyphicon glyphicon-refresh'),
-                                                class='glyphicon glyphicon-refresh',
-                                                style = 'margin-top:25px')})
   
-  
-  observeEvent(
-    input$reset_selected,{shinyjs::reset("Table_selected_div")}
-  )
-  ## Download button for entire data 
+  ## Download button for Customized data 
   data_listing_dl_all<-reactive({
     data <- sapply(DataListing_all(), as.character)
     data[is.na(data)] <- ""   # Replace NA with blank
@@ -440,36 +413,17 @@ server <- function(input, output, session) {
   
   output$Data_Listing_dl_all <- downloadHandler(
     filename = function() {
-      paste0("Data Listing", ".csv")
+      paste0(Sys.time(),"Data Listing", ".csv")
     },
     content = function(file) {
       
-      write.csv( data_listing_dl_all(), file, row.names=FALSE)
+      fwrite( data_listing_dl_all(), file, row.names=FALSE)
     }
   )
-  ## Download button for selected data 
-  data_listing_dl_selected<-reactive({
-    data <- sapply(DataListing_selected(), as.character)
-    data[is.na(data)] <- ""   # Replace NA with blank
-    data                      # Print updated data frame
-  })
-  output$Data_Listing_dl_BUTTON_selected<-renderUI({downloadButton("Data_Listing_dl_selected","Download")})
   
-  output$Data_Listing_dl_selected <- downloadHandler(
-    filename = function() {
-      paste0("Data Listing", ".csv")
-    },
-    content = function(file) {
-      
-      write.csv( data_listing_dl_selected(), file, row.names=FALSE)
-    }
-  )
   ### Execute
   output$execute_all<-renderUI({
     actionButton("execute_button_all", "Execute", icon=icon('glyphicon glyphicon-play'),class='glyphicon glyphicon-play')
-  })
-  output$execute_selected<-renderUI({
-    actionButton("execute_button_selected", "Execute", icon=icon('glyphicon glyphicon-play'),class='glyphicon glyphicon-play')
   })
   ## Reports
   ##Execute button for Report
@@ -529,7 +483,7 @@ server <- function(input, output, session) {
   })
   output$Reports_dl <- downloadHandler(
     filename = function() {
-      paste0("Reports", ".csv")
+      paste0(Sys.time(),"Reports", ".csv")
     },
     content = function(file) {
       write.csv(Reports_DT_DL(), file, row.names=FALSE)
@@ -551,14 +505,9 @@ server <- function(input, output, session) {
     if (dict$doTable_dict == FALSE) return()
     
     isolate({  
-      ##validate
-      validate(need(!(is.na(input$form_dict)) , 'Please select instrument forms!')) 
-      #redcap_metadata_read(
-      #redcap_uri=URL(),
-      #token=input_token
-      #token=TOKEN()
       
-      #)$data
+      validate(need(!(is.na(input$form_dict)) , 'Please select instrument forms!')) 
+      
       spec()
     })
   })
@@ -604,7 +553,7 @@ server <- function(input, output, session) {
   })
   output$DD_TBL_dl <- downloadHandler(
     filename = function() {
-      paste0("Data Dictionary", ".csv")
+      paste0(Sys.time(),"Data Dictionary", ".csv")
     },
     content = function(file) {
       write.csv(data_dict_dl(), file, row.names=FALSE)
