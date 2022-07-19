@@ -63,19 +63,19 @@ server <- function(input, output, session) {
   #token <- readLines(input_token)
   #}
   
-  #reactive({
-  #cat("token_file update")
-  ###token_file <- input$token_file
-  #token_file <- "/home/secrets/token"
-  #if (file != "") {
-  #input_token <- readLines(token_file)
-  #updateTextInput(session, "token", value=input_token)
-  #token_reread_sec <- 60
-  #invalidateLater(token_reread_sec*1000, session)
-  
-  # }
-  #})  
-  #Api_key<-reactive({redcapConnection(url= URL(), token=TOKEN())})
+  reactive({
+    cat("token_file update")
+    ###token_file <- input$token_file
+    token_file <- "/home/secrets/token"
+    if (file != "") {
+      input_token <- readLines(token_file)
+      #updateTextInput(session, "token", value=input_token)
+      token_reread_sec <- 60
+      invalidateLater(token_reread_sec*1000, session)
+      
+    }
+  })  
+  Api_key<-reactive({redcapConnection(url= URL(), token=TOKEN())})
   
   
   
@@ -231,14 +231,15 @@ server <- function(input, output, session) {
   
   spec<-reactive({
     
-    formData <- list("token"=TOKEN(),
-                     #"token"=input_token,
-                     content='metadata',
-                     format='csv',
-                     returnFormat='json'
-    )
-    response <- httr::POST(url=URL(), body = formData, encode = "form")
-    result <- httr::content(response)
+    #formData <- list("token"=TOKEN(),
+    
+    #content='metadata',
+    #format='csv',
+    #returnFormat='json'
+    #)
+    #response <- httr::POST(url=URL(), body = formData, encode = "form")
+    #result <- httr::content(response)
+    exportMetaData(Api_key())
     
   })
   Instrument_label<-reactive({
